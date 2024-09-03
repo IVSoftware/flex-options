@@ -1,4 +1,5 @@
 
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -38,21 +39,11 @@ namespace flex_options
             replaceIndex = dataGridView.Columns[nameof(Record.Option)].Index;
             dataGridView.Columns.RemoveAt(replaceIndex);
             dataGridView.Columns.Insert(replaceIndex, cbCol);
-            dataGridView.CurrentCellChanged += (sender, e) =>
-            {
-                var cbCol = ((DataGridViewComboBoxColumn)dataGridView.Columns[nameof(Record.Option)]);
-                if (dataGridView.CurrentCell is DataGridViewComboBoxCell cbCell && cbCell.ColumnIndex == cbCol.Index)
-                {
-                    var record = Records[dataGridView.CurrentCell.RowIndex];
-                    // It's REAL important to set the DataSource of the Cell not the Column.
-                    cbCell.DataSource = record.AvailableOptions;
-                }
-            };
             dataGridView.DataError += (sender, e) =>
             {
                 Debug.Fail("We don't expect this to happen anymore!");
             };
-            // Consider 'not' allowing the record to be dirty after a CB select.
+            // Consider 'not' allowing the record to stay dirty after a CB select.
             dataGridView.CurrentCellDirtyStateChanged += (sender, e) =>
             {
                 if(dataGridView.CurrentCell is DataGridViewComboBoxCell)
@@ -61,6 +52,32 @@ namespace flex_options
                     {
                         BeginInvoke(()=> dataGridView.EndEdit(DataGridViewDataErrorContexts.Commit));
                     }
+                }
+            };
+            // In this scheme, we bind the DataSource of the combo box of
+            // the cell (not the Column) to changes in Available Options.
+            Records.ListChanged += (sender, e) =>
+            {
+                switch (e.ListChangedType)
+                {
+                    case ListChangedType.ItemAdded:
+                        localUpdateOptions();
+                        break;
+                    case ListChangedType.ItemChanged:
+                        switch (e.PropertyDescriptor?.Name)
+                        {
+                            case nameof(Record.AvailableOptions):
+                                localUpdateOptions();
+                                break;
+                        }
+                        break;
+                }
+                void localUpdateOptions()
+                {
+                    var record = Records[e.NewIndex];
+                    var comboBoxCell =
+                        (DataGridViewComboBoxCell)dataGridView[dataGridView.Columns[nameof(Record.Option)].Index, e.NewIndex];
+                    comboBoxCell.DataSource = record.AvailableOptions;
                 }
             };
             Records.Add(new Record());
@@ -106,7 +123,20 @@ namespace flex_options
         int _index = 1;
 
         [Browsable(false)]
-        public string[] AvailableOptions { get; set; } = Enum.GetNames(typeof(OptionsOne));
+        public string[] AvailableOptions
+        {
+            get => _availableOptions;
+            set
+            {
+                if (!Equals(_availableOptions, value))
+                {
+                    _availableOptions = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+        string[] _availableOptions = Enum.GetNames(typeof(OptionsOne));
+
         public string? Option
         {
             get => _option;
@@ -119,10 +149,10 @@ namespace flex_options
                         _option = value;
                         OnPropertyChanged();
                     }
-                }
-                else
-                {   /* G T K */
-                    // But landing here is unlikely based on the other mechanisms.
+                    else
+                    {   /* G T K */
+                        // But landing here is unlikely based on the other mechanisms.
+                    }
                 }
             }
         }
