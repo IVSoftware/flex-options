@@ -1,5 +1,6 @@
 
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace flex_options
@@ -27,6 +28,7 @@ namespace flex_options
             dataGridView.Columns.RemoveAt(replaceIndex);
             dataGridView.Columns.Insert(replaceIndex, cbCol);
 
+            // Option column
             cbCol = new DataGridViewComboBoxColumn
             {
                 Name = nameof(Record.Option),
@@ -41,16 +43,15 @@ namespace flex_options
                 var cbCol = ((DataGridViewComboBoxColumn)dataGridView.Columns[nameof(Record.Option)]);
                 if (dataGridView.CurrentCell is DataGridViewComboBoxCell cbCell && cbCell.ColumnIndex == cbCol.Index)
                 {
-                    cbCol.DataPropertyName = null;
                     var record = Records[dataGridView.CurrentCell.RowIndex];
                     cbCell.DataSource = record.AvailableOptions;
-                    cbCol.DataPropertyName = nameof(Record.Option);
                 }
             };
             dataGridView.DataError += (sender, e) =>
             {
-                e.Cancel = e.Exception?.Message == "DataGridViewComboBoxCell value is not valid.";
+                Debug.Fail("We don't expect this to happen anymore!");
             };
+            // Consider 'not' allowing the record to be dirty after a CB select.
             dataGridView.CurrentCellDirtyStateChanged += (sender, e) =>
             {
                 if(dataGridView.CurrentCell is DataGridViewComboBoxCell)
@@ -61,38 +62,10 @@ namespace flex_options
                     }
                 }
             };
-            dataGridView.EditingControlShowing += (sender, e) =>
-            {
-                if(dataGridView.EditingControl is ComboBox combo)
-                {
-                    var record = Records[dataGridView.CurrentCell.RowIndex];
-                    combo.SelectedIndex = combo.FindStringExact(record.Option);
-                    combo.PreviewKeyDown -= localPreviewKey;
-                    combo.PreviewKeyDown += localPreviewKey;
-                    combo.SelectionChangeCommitted -= localCommit;
-                    combo.SelectionChangeCommitted += localCommit;
-                    void localPreviewKey(object? sender, PreviewKeyDownEventArgs e)
-                    {
-                        if (e.KeyData == Keys.Escape)
-                        {
-                            dataGridView.CancelEdit();
-                            // Make sure edit control goes away.
-                            dataGridView.CurrentCell = null;
-                        }
-                    }
-
-                    void localCommit(object? sender, EventArgs e)
-                    {
-                        record.Option = $"{combo.SelectedItem}";
-                    }
-                }
-            };
             Records.Add(new Record());
             Records.Add(new Record());
             Records.Add(new Record());
         }
-
-        bool _toggle;
         BindingList<Record> Records { get; } = new BindingList<Record>();
     }
 
@@ -133,8 +106,6 @@ namespace flex_options
 
         [Browsable(false)]
         public string[] AvailableOptions { get; set; } = Enum.GetNames(typeof(OptionsOne));
-
-        // public string? Option { get; set; } = $"{OptionsOne.Select}";
         public string? Option
         {
             get => _option;
