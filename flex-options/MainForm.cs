@@ -119,10 +119,10 @@ namespace flex_options
                         _option = value;
                         OnPropertyChanged();
                     }
-                }
-                else
-                {   /* G T K */
-                    // But landing here is unlikely based on the other mechanisms.
+                    else
+                    {   /* G T K */
+                        // But landing here is unlikely based on the other mechanisms.
+                    }
                 }
             }
         }
