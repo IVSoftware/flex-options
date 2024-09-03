@@ -43,20 +43,7 @@ namespace flex_options
                 {
                     cbCol.DataPropertyName = null;
                     var record = Records[dataGridView.CurrentCell.RowIndex];
-                    switch (record.Index)
-                    {
-                        case 1:
-                            cbCell.DataSource = Enum.GetNames<OptionsOne>();
-                            break;
-                        case 2:
-                            cbCell.DataSource = Enum.GetNames<OptionsTwo>();
-                            break;
-                        case 3:
-                            cbCell.DataSource = Enum.GetNames<OptionsThree>();
-                            break;
-                        default:
-                            return;
-                    }
+                    cbCell.DataSource = record.AvailableOptions;
                     cbCol.DataPropertyName = nameof(Record.Option);
                 }
             };
