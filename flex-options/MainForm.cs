@@ -44,6 +44,7 @@ namespace flex_options
                 if (dataGridView.CurrentCell is DataGridViewComboBoxCell cbCell && cbCell.ColumnIndex == cbCol.Index)
                 {
                     var record = Records[dataGridView.CurrentCell.RowIndex];
+                    // It's REAL important to set the DataSource of the Cell not the Column.
                     cbCell.DataSource = record.AvailableOptions;
                 }
             };
@@ -118,6 +119,10 @@ namespace flex_options
                         _option = value;
                         OnPropertyChanged();
                     }
+                }
+                else
+                {   /* G T K */
+                    // But landing here is unlikely based on the other mechanisms.
                 }
             }
         }
